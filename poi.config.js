@@ -11,8 +11,12 @@ const cdns = {
 }
 
 module.exports = {
-  extendWebpack(config) {
-    config.module.set('noParse', /babel-preset-vue/)
+  entry: 'src/index.js',
+  output: {
+    publicUrl: '/',
+  },
+  chainWebpack(config) {
+    config.module.noParse(/babel-preset-vue/)
 
     config.module.rule('js')
       .include
@@ -24,52 +28,36 @@ module.exports = {
       electron: 'commonjs electron'
     })
   },
-  production: {
-    sourceMap: false
-  },
-  hash: false,
-  homepage: '/',
-  env: Object.assign({
+  envs: Object.assign({
     VERSION: `v${pkg.version}-${repoLatestCommit().commit.slice(0, 7)}`,
     LATEST_COMMIT: repoLatestCommit().commit.slice(0, 7)
   }, cdns),
-  presets: [
-    require('poi-preset-bundle-report')(),
-    require('poi-preset-babel-minify')(),
-    require('poi-preset-offline')({
-      pluginOptions: {
-        version: '[hash]',
-        autoUpdate: true,
-        safeToUseOptionalCaches: true,
-        caches: {
-          main: ['index.html', 'client.*', 'vendor.*', 'editor-page.chunk.js'],
-          additional: ['*.chunk.js', ':externals:'],
-          optional: [':rest:']
-        },
-        ServiceWorker: {
-          events: true,
-          navigateFallbackURL: '/'
-        },
-        AppCache: {
-          events: true,
-          FALLBACK: { '/': '/' }
-        },
-        externals: [].concat(Object.keys(cdns).reduce((res, name) => {
-          return res.concat(cdns[name])
-        }, []))
-      }
-    })
+  plugins: [
+    'poi-preset-bundle-report',
+    'poi-preset-babel-minify',
+    {
+      resolve: 'poi-preset-offline',
+      options: {
+          version: '[hash]',
+          autoUpdate: true,
+          safeToUseOptionalCaches: true,
+          caches: {
+            main: ['index.html', 'client.*', 'vendor.*', 'editor-page.chunk.js'],
+            additional: ['*.chunk.js', ':externals:'],
+            optional: [':rest:']
+          },
+          ServiceWorker: {
+            events: true,
+            navigateFallbackURL: '/'
+          },
+          AppCache: {
+            events: true,
+            FALLBACK: { '/': '/' }
+          },
+          externals: [].concat(Object.keys(cdns).reduce((res, name) => {
+            return res.concat(cdns[name])
+          }, []))
+      },
+    },
   ],
-  babel: {
-    babelrc: false,
-    presets: [
-      require.resolve('babel-preset-poi')
-    ],
-    plugins: [[require.resolve('babel-plugin-component'), [
-      {
-        libraryName: 'element-ui',
-        styleLibraryName: 'theme-chalk'
-      }
-    ]]]
-  }
 }
